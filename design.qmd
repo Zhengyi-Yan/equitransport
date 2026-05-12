@@ -1,0 +1,48 @@
+---
+title: "Design report: equitransport-akl"
+authors:
+  - Zhengyi Yan
+  - Ruoxuan Huang
+date: today
+format:
+  html:
+    toc: true
+    number-sections: true
+crossref:
+  fig-title: "Figure"
+  fig-prefix: "Figure"
+---
+
+## Problem statement
+
+Two sentences. What problem does the package solve, and for whom? Avoid jargon.
+A council planner or another GISCI 343 student should understand it.
+
+## Pipeline diagram
+
+The package takes [input data] and turns it into [output deliverable].
+@fig-pipeline shows the three functions and how data flows between them.
+
+![Pipeline from input data through the three functions to the final deliverable.](docs/pipeline.png){#fig-pipeline width=80%}
+
+## Expected output
+
+@fig-output is the sketch of what the demo notebook will produce on the last cell.
+
+![Sketch of the expected demo output (rough map of the route coloured by exposure).](docs/expected_output.png){#fig-output width=80%}
+
+If you cannot sketch what your output looks like, you do not yet know what
+your package does.
+
+## Key design choices
+
+- **CRS**: we use EPSG:2193 (NZTM) because *(reason)*.
+- **Data pattern**: data is *(bundled / fetched / both)* because *(reason)*.
+- **Optional dependencies**: we keep *(library X)* as an optional extra because *(reason)*.
+
+## Roles and next function
+
+Partner A will own *(function name)* for the first draft. Partner B will own
+*(function name)*. Both partners review all code.
+
+Next function to implement after today's lab: *(function name)*.
