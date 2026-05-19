@@ -9,7 +9,7 @@ __version__ = "0.1.0"
 def load_nzdep(sa2_gdf):
     return
 
-def compute_access(gdf, metric_col):
+def compute_access(gdf, metric_col, mode_weights=None):
     return
 
 def equity_summary(gdf):
