@@ -15,3 +15,5 @@ def compute_access(gdf, metric_col):
 def equity_summary(gdf):
     return
 
+def decile_to_quintile(decile, expected_quintile):
+    return
