@@ -1,16 +1,20 @@
 [project]
 name = "equitransport"
 version = "0.1.0"
-description = "Add your description here"
+description = "GIS tools for measuring public transport access equity in Auckland."
 readme = "README.md"
 authors = [
     { name = "Zhengyi Yan", email = "zyan435@aucklanduni.ac.nz" }, 
     { name = "Ruoxuan Huang", email = "rhua798@aucklanduni.ac.nz" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.11"
+license = "MIT"
 dependencies = [
     "geopandas>=1.1.3",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
     "pandas>=3.0.3",
+    "shapely>=2.1.2",
 ]
 
 [build-system]
