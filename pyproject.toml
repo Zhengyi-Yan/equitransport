@@ -1,5 +1,5 @@
 [project]
-name = "equitransport"
+name = "Equitransport"
 version = "0.1.0"
 description = "GIS tools for measuring public transport access equity in Auckland."
 readme = "README.md"

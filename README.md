@@ -26,7 +26,11 @@ uv pip install -e .
 ## Required Datasets
 
 The demo downloads SA1 and SA2 boundaries from the Stats NZ Datafinder WFS API
-using `src/equitransport/config.py`, then caches them in `outputs/cache`.
+using a user-supplied API key, then caches them in `outputs/cache`.
+
+You need a Stats NZ Datafinder API key for the boundary downloads. Pass it
+directly to the boundary loader functions with `api_key=...`; do not commit API
+keys to Git.
 
 You provide these datasets as local files or already-loaded DataFrames:
 
@@ -44,24 +48,36 @@ All distance and buffer operations use EPSG:2193.
 ## Example Usage
 
 ```python
-import geopandas as gpd
 import pandas as pd
 
-from equitransport import compute_access, equity_summary, load_nzdep
+from equitransport import (
+    compute_access,
+    equity_summary,
+    load_auckland_sa1_boundaries,
+    load_auckland_sa2_boundaries,
+    load_nzdep,
+)
 from equitransport.plotting import plot_access_map, plot_nzdep_map, plot_worst_gaps_map
 
-from equitransport import load_auckland_sa1_boundaries, load_auckland_sa2_boundaries
+api_key = "PASTE_YOUR_STATSNZ_API_KEY_HERE"
 
-sa2_gdf = load_auckland_sa2_boundaries(cache_path="outputs/cache/auckland_sa2.gpkg")
-sa1_gdf = load_auckland_sa1_boundaries(sa2_gdf, cache_path="outputs/cache/auckland_sa1.gpkg")
-nzdep_df = pd.read_csv("data/NZDep2023.csv")
+sa2_gdf = load_auckland_sa2_boundaries(
+    api_key=api_key,
+    cache_path="outputs/cache/auckland_sa2.gpkg",
+)
+sa1_gdf = load_auckland_sa1_boundaries(
+    sa2_gdf,
+    api_key=api_key,
+    cache_path="outputs/cache/auckland_sa1.gpkg",
+)
+nzdep_df = pd.read_csv("src/equitransport/data/NZDep2023.csv")
 
 sa2 = load_nzdep(sa2_gdf, nzdep_df=nzdep_df)
 sa2 = compute_access(
     sa2,
     sa1_gdf=sa1_gdf,
     nzdep_df=nzdep_df,
-    stops_path="data/gtfs/stops.txt",
+    gtfs_dir="src/equitransport/data/gtfs",
 )
 
 summary, gini_value, sa2_final = equity_summary(sa2)
@@ -71,7 +87,76 @@ plot_access_map(sa2_final, output_path="outputs/access_map.png")
 plot_worst_gaps_map(sa2_final, "outputs/worst_gaps_map.png")
 ```
 
-You can also run the placeholder demo script after editing its input paths:
+## Normal vs Weighted Access
+
+`compute_access()` creates the normal access metric:
+
+- `pct_population_within_400m`: percentage of each SA2 population within 400 m
+  of any public transport stop.
+
+If you pass a full GTFS folder with `gtfs_dir=...`, it also creates:
+
+- `weighted_access_score`: a population-weighted score that accounts for nearby
+  route-serving stops and simple mode weights.
+
+Default mode weights are:
+
+```python
+{
+    "bus": 2,
+    "train": 5,
+    "ferry": 1,
+}
+```
+
+Use normal access outputs:
+
+```python
+summary, gini_value, sa2_final = equity_summary(
+    sa2,
+    access_col="pct_population_within_400m",
+)
+
+plot_access_map(
+    sa2_final,
+    access_col="pct_population_within_400m",
+    output_path="outputs/access_map.png",
+)
+```
+
+Use weighted access outputs:
+
+```python
+weighted_summary, weighted_gini_value, sa2_final = equity_summary(
+    sa2,
+    access_col="weighted_access_score",
+)
+
+plot_access_map(
+    sa2_final,
+    access_col="weighted_access_score",
+    output_path="outputs/weighted_access_map.png",
+)
+```
+
+Custom mode weights can be passed to `compute_access()`:
+
+```python
+sa2 = compute_access(
+    sa2,
+    sa1_gdf=sa1_gdf,
+    nzdep_df=nzdep_df,
+    gtfs_dir="src/equitransport/data/gtfs",
+    mode_weights={
+        "bus": 1,
+        "train": 4,
+        "ferry": 2,
+    },
+)
+```
+
+You can also run the demo script after pasting your API key into
+`STATSNZ_API_KEY` near the top of `scripts/run_demo.py`:
 
 ```bash
 uv run python scripts/run_demo.py

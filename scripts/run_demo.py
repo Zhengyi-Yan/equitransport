@@ -30,14 +30,28 @@ GTFS_DIR = DATA_DIR / "gtfs"
 OUTPUT_DIR = Path("outputs")
 CACHE_DIR = OUTPUT_DIR / "cache"
 
+# Paste your Stats NZ Datafinder API key here.
+# Create a key at: https://datafinder.stats.govt.nz/
+STATSNZ_API_KEY = "PASTE_YOUR_STATSNZ_API_KEY_HERE"
+
 
 def main() -> None:
     """Run the demo workflow and save tabular and map outputs."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    sa2_gdf = load_auckland_sa2_boundaries(cache_path=CACHE_DIR / "auckland_sa2.gpkg")
-    sa1_gdf = load_auckland_sa1_boundaries(sa2_gdf, cache_path=CACHE_DIR / "auckland_sa1.gpkg")
+    if STATSNZ_API_KEY == "PASTE_YOUR_STATSNZ_API_KEY_HERE":
+        raise ValueError("Paste your Stats NZ Datafinder API key into STATSNZ_API_KEY before running the demo.")
+
+    sa2_gdf = load_auckland_sa2_boundaries(
+        api_key=STATSNZ_API_KEY,
+        cache_path=CACHE_DIR / "auckland_sa2.gpkg",
+    )
+    sa1_gdf = load_auckland_sa1_boundaries(
+        sa2_gdf,
+        api_key=STATSNZ_API_KEY,
+        cache_path=CACHE_DIR / "auckland_sa1.gpkg",
+    )
     nzdep_df = pd.read_csv(NZDEP_PATH)
 
     sa2 = load_nzdep(sa2_gdf, nzdep_df=nzdep_df)
