@@ -1,0 +1,42 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - usage.qmd
+    - api-reference.qmd
+    - data-methods.qmd
+
+website:
+  title: "equitransport"
+  description: "Python tools for Auckland public transport access equity analysis."
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: usage.qmd
+        text: Usage Guide
+      - href: api-reference.qmd
+        text: API Reference
+      - href: data-methods.qmd
+        text: Data and Methods
+    right:
+      - text: Source
+        href: https://github.com/Zhengyi-Yan/equitransport-akl
+  sidebar:
+    style: docked
+    contents:
+      - index.qmd
+      - usage.qmd
+      - api-reference.qmd
+      - data-methods.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+
+execute:
+  freeze: auto

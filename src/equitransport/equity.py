@@ -8,11 +8,22 @@ import pandas as pd
 
 from .access import _access_quintile
 from .data import _require_columns
-from .utils import decile_to_quintile
+def gini(values: object, weights: object | None = None) -> float:
+    """Calculate a Gini coefficient.
 
+    Parameters
+    ----------
+    values:
+        Array-like access values.
+    weights:
+        Optional array-like weights, typically SA2 population.
 
-def gini(values, weights=None) -> float:
-    """Calculate a Gini coefficient for an array-like set of values."""
+    Returns
+    -------
+    float
+        Gini coefficient between 0 and 1, or ``nan`` when no valid values are
+        available.
+    """
 
     x = np.asarray(values, dtype=float)
     if weights is None:
@@ -60,8 +71,30 @@ def equity_summary(
     gdf: gpd.GeoDataFrame,
     access_col: str = "pct_population_within_400m",
     deprivation_col: str = "nzdep_quintile",
-):
-    """Create NZDep quintile access summaries and choropleth-ready flags."""
+) -> tuple[pd.DataFrame, float, gpd.GeoDataFrame]:
+    """Create NZDep quintile access summaries and equity flags.
+
+    Parameters
+    ----------
+    gdf:
+        SA2 GeoDataFrame containing deprivation, population, and access
+        columns.
+    access_col:
+        Access metric column to summarise.
+    deprivation_col:
+        Deprivation group column, normally ``nzdep_quintile``.
+
+    Returns
+    -------
+    tuple[pandas.DataFrame, float, geopandas.GeoDataFrame]
+        Summary table, population-weighted access Gini coefficient, and a copy
+        of the input GeoDataFrame with ``access_quintile`` and ``worst_gap``.
+
+    Raises
+    ------
+    KeyError
+        If required summary columns are missing.
+    """
 
     _require_columns(gdf, {deprivation_col, "population", access_col}, "gdf")
     result = gdf.copy()

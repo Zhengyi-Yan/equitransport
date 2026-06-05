@@ -1,6 +1,6 @@
 [project]
 name = "Equitransport"
-version = "0.1.0"
+version = "0.1.5"
 description = "GIS tools for measuring public transport access equity in Auckland."
 readme = "README.md"
 authors = [
@@ -23,5 +23,14 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "pytest-cov>=7.0.0",
     "pytest>=9.0.3",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=equitransport --cov-report=term-missing --cov-fail-under=70"
+
+[tool.coverage.run]
+omit = [
+    "src/equitransport/config.py",
 ]

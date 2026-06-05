@@ -1,0 +1,61 @@
+---
+title: "equitransport"
+subtitle: "Auckland public transport access equity analysis"
+---
+
+`equitransport` is a Python package for measuring whether Auckland public
+transport stop access reaches communities with higher socioeconomic
+deprivation. It combines SA2 and SA1 boundary data, NZDep2023 deprivation and
+population data, and GTFS stop data to produce SA2-level access metrics,
+equity summaries, inequality scores, and static maps.
+
+The package answers a practical analysis question:
+
+> Does Auckland's public transport access reach the most deprived neighbourhoods?
+
+## What the Package Produces
+
+The standard workflow produces:
+
+- an Auckland SA2 `GeoDataFrame` with deprivation, population, access, and
+  equity indicator columns
+- a five-row NZDep quintile summary table
+- an Auckland-wide access Gini coefficient
+- optional weighted access scores based on GTFS route modes
+- static maps for deprivation, access, worst-gap areas, and quintile summaries
+
+## Core Workflow
+
+The analysis is organised around three stages:
+
+1. `load_nzdep()` joins and population-weights SA1-level NZDep2023 data to
+   Auckland SA2 polygons.
+2. `compute_access()` estimates the share of each SA2 population within a
+   400 m straight-line buffer of a public transport stop.
+3. `equity_summary()` summarises access by NZDep quintile, calculates a Gini
+   coefficient, and flags high-deprivation, low-access areas.
+
+![Package workflow from input data to final outputs.](docs/equitransport-diagram.jpg)
+
+## Installation
+
+Install dependencies with `uv`:
+
+```bash
+uv sync
+uv run pytest -v
+```
+
+For local package development:
+
+```bash
+uv pip install -e .
+```
+
+## Documentation Pages
+
+- [Usage Guide](usage.qmd): end-to-end examples and common workflows.
+- [API Reference](api-reference.qmd): public functions, inputs, outputs, and
+  expected columns.
+- [Data and Methods](data-methods.qmd): dataset requirements, coordinate
+  systems, access assumptions, and limitations.

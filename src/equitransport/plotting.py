@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 
 DEFAULT_EXCLUDED_MAP_SA2_NAMES = {
@@ -27,10 +31,10 @@ def _save(fig, output_path: str | Path | None) -> None:
 
 
 def _map_gdf(
-    gdf,
+    gdf: gpd.GeoDataFrame,
     exclude_sa2_names: set[str] | None = None,
     exclude_unpopulated: bool = True,
-):
+) -> gpd.GeoDataFrame:
     plot_gdf = gdf.copy()
     if exclude_sa2_names is not None and "SA22023_name" in plot_gdf.columns:
         plot_gdf = plot_gdf[~plot_gdf["SA22023_name"].isin(exclude_sa2_names)]
@@ -39,7 +43,7 @@ def _map_gdf(
     return plot_gdf.copy()
 
 
-def _set_zoomed_extent(ax, gdf, padding: float = 0.03, urban_zoom: bool = True) -> None:
+def _set_zoomed_extent(ax: Axes, gdf: gpd.GeoDataFrame, padding: float = 0.03, urban_zoom: bool = True) -> None:
     if gdf.empty:
         return
     if urban_zoom and len(gdf) > 20:
@@ -56,7 +60,7 @@ def _set_zoomed_extent(ax, gdf, padding: float = 0.03, urban_zoom: bool = True) 
     ax.set_ylim(miny - height * padding, maxy + height * padding)
 
 
-def _style_map_ax(ax, water_color: str) -> None:
+def _style_map_ax(ax: Axes, water_color: str) -> None:
     ax.set_facecolor(water_color)
     ax.patch.set_visible(True)
     ax.set_xticks([])
@@ -68,14 +72,35 @@ def _style_map_ax(ax, water_color: str) -> None:
 
 
 def plot_nzdep_map(
-    gdf,
+    gdf: gpd.GeoDataFrame,
     output_path: str | Path | None = None,
     exclude_sa2_names: set[str] | None = DEFAULT_EXCLUDED_MAP_SA2_NAMES,
     exclude_unpopulated: bool = True,
     urban_zoom: bool = True,
     water_color: str = DEFAULT_WATER_COLOR,
-):
-    """Plot Auckland SA2s coloured by NZDep quintile."""
+) -> tuple[Figure, Axes]:
+    """Plot Auckland SA2s coloured by NZDep quintile.
+
+    Parameters
+    ----------
+    gdf:
+        SA2 GeoDataFrame containing ``nzdep_quintile`` and geometry.
+    output_path:
+        Optional image path. When supplied, the figure is saved to disk.
+    exclude_sa2_names:
+        Optional SA2 names to exclude from the map.
+    exclude_unpopulated:
+        Whether to exclude rows with missing or zero population.
+    urban_zoom:
+        Whether to zoom to the central urban extent using centroid quantiles.
+    water_color:
+        Axes background colour used for water.
+
+    Returns
+    -------
+    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        Matplotlib figure and axes.
+    """
 
     plot_gdf = _map_gdf(gdf, exclude_sa2_names, exclude_unpopulated)
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -88,15 +113,38 @@ def plot_nzdep_map(
 
 
 def plot_access_map(
-    gdf,
+    gdf: gpd.GeoDataFrame,
     access_col: str = "pct_population_within_400m",
     output_path: str | Path | None = None,
     exclude_sa2_names: set[str] | None = DEFAULT_EXCLUDED_MAP_SA2_NAMES,
     exclude_unpopulated: bool = True,
     urban_zoom: bool = True,
     water_color: str = DEFAULT_WATER_COLOR,
-):
-    """Plot Auckland SA2s coloured by public transport access."""
+) -> tuple[Figure, Axes]:
+    """Plot Auckland SA2s coloured by public transport access.
+
+    Parameters
+    ----------
+    gdf:
+        SA2 GeoDataFrame containing the selected access column and geometry.
+    access_col:
+        Column used to colour the map.
+    output_path:
+        Optional image path. When supplied, the figure is saved to disk.
+    exclude_sa2_names:
+        Optional SA2 names to exclude from the map.
+    exclude_unpopulated:
+        Whether to exclude rows with missing or zero population.
+    urban_zoom:
+        Whether to zoom to the central urban extent using centroid quantiles.
+    water_color:
+        Axes background colour used for water.
+
+    Returns
+    -------
+    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        Matplotlib figure and axes.
+    """
 
     plot_gdf = _map_gdf(gdf, exclude_sa2_names, exclude_unpopulated)
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -109,14 +157,35 @@ def plot_access_map(
 
 
 def plot_worst_gaps_map(
-    gdf,
+    gdf: gpd.GeoDataFrame,
     output_path: str | Path | None = None,
     exclude_sa2_names: set[str] | None = DEFAULT_EXCLUDED_MAP_SA2_NAMES,
     exclude_unpopulated: bool = True,
     urban_zoom: bool = True,
     water_color: str = DEFAULT_WATER_COLOR,
-):
-    """Plot high-deprivation, low-access SA2s."""
+) -> tuple[Figure, Axes]:
+    """Plot high-deprivation, low-access SA2s.
+
+    Parameters
+    ----------
+    gdf:
+        SA2 GeoDataFrame containing a boolean ``worst_gap`` column.
+    output_path:
+        Optional image path. When supplied, the figure is saved to disk.
+    exclude_sa2_names:
+        Optional SA2 names to exclude from the map.
+    exclude_unpopulated:
+        Whether to exclude rows with missing or zero population.
+    urban_zoom:
+        Whether to zoom to the central urban extent using centroid quantiles.
+    water_color:
+        Axes background colour used for water.
+
+    Returns
+    -------
+    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        Matplotlib figure and axes.
+    """
 
     plot_gdf = _map_gdf(gdf, exclude_sa2_names, exclude_unpopulated)
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -131,8 +200,22 @@ def plot_worst_gaps_map(
     return fig, ax
 
 
-def plot_quintile_access_bar(summary, output_path: str | Path | None = None):
-    """Plot population-weighted access by NZDep quintile."""
+def plot_quintile_access_bar(summary: pd.DataFrame, output_path: str | Path | None = None) -> tuple[Figure, Axes]:
+    """Plot population-weighted access by NZDep quintile.
+
+    Parameters
+    ----------
+    summary:
+        Summary table from ``equity_summary`` containing ``nzdep_quintile`` and
+        ``population_weighted_access``.
+    output_path:
+        Optional image path. When supplied, the figure is saved to disk.
+
+    Returns
+    -------
+    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        Matplotlib figure and axes.
+    """
 
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.bar(summary["nzdep_quintile"].astype(str), summary["population_weighted_access"], color="#2c7fb8")

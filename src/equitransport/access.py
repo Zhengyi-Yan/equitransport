@@ -13,7 +13,26 @@ from .data import NZTM_CRS, WGS84_CRS, _require_columns, load_gtfs_stops, load_g
 
 
 def prepare_sa1_centroids(sa1_gdf: gpd.GeoDataFrame, nzdep_df: pd.DataFrame) -> gpd.GeoDataFrame:
-    """Create SA1 centroid points with population and parent SA2 code attached."""
+    """Create SA1 centroid points with population and parent SA2 code.
+
+    Parameters
+    ----------
+    sa1_gdf:
+        SA1 boundary layer containing ``SA12023_code`` and geometry.
+    nzdep_df:
+        NZDep2023 table containing ``SA12023_code``, ``SA22023_code``, and
+        ``URPopnSA1_2023``.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        SA1 centroid points in EPSG:2193 with population and parent SA2 code.
+
+    Raises
+    ------
+    KeyError
+        If required SA1 or NZDep columns are missing.
+    """
 
     _require_columns(sa1_gdf, {"SA12023_code", "geometry"}, "sa1_gdf")
     _require_columns(nzdep_df, {"SA12023_code", "SA22023_code", "URPopnSA1_2023"}, "nzdep_df")
@@ -160,7 +179,48 @@ def compute_access(
     distance: float = 400,
     mode_weights: dict[str, float] | None = None,
 ) -> gpd.GeoDataFrame:
-    """Calculate buffer-based public transport access for each SA2."""
+    """Calculate buffer-based public transport access for each SA2.
+
+    Parameters
+    ----------
+    gdf:
+        SA2 GeoDataFrame containing ``SA22023_code``, ``population``, and
+        geometry. This is usually the output of ``load_nzdep``.
+    metric_col:
+        Optional additional column name for the normal access percentage.
+    sa1_gdf:
+        SA1 boundary layer used to create population centroids.
+    nzdep_df:
+        NZDep2023 table used to attach SA1 population and parent SA2 codes.
+    stops_gdf:
+        Already-loaded stop point GeoDataFrame. If geometry is absent,
+        ``stop_lon`` and ``stop_lat`` are used.
+    stops_path:
+        Path to GTFS ``stops.txt``. Ignored when ``stops_gdf`` or
+        ``gtfs_dir`` is supplied.
+    gtfs_dir:
+        Directory containing full GTFS files. Enables weighted access by route
+        mode.
+    distance:
+        Stop buffer distance in metres.
+    mode_weights:
+        Optional mode weights for ``weighted_access_score``. Defaults to
+        ``{"bus": 2, "train": 5, "ferry": 1}``.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        SA2 GeoDataFrame in EPSG:2193 with ``population_within_400m``,
+        ``pct_population_within_400m``, ``access_quintile``, and
+        ``weighted_access_score`` columns.
+
+    Raises
+    ------
+    ValueError
+        If SA1/NZDep inputs or stop inputs are missing.
+    KeyError
+        If required SA2 columns are missing.
+    """
 
     _require_columns(gdf, {"SA22023_code", "population", "geometry"}, "gdf")
     if sa1_gdf is None or nzdep_df is None:

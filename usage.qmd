@@ -1,0 +1,186 @@
+---
+title: "Usage Guide"
+---
+
+This guide shows how to run the end-to-end Auckland public transport equity
+workflow and how to use the main access metrics.
+
+## Prerequisites
+
+Install the project dependencies:
+
+```bash
+uv sync
+```
+
+You also need a Stats NZ Datafinder API key to download SA1 and SA2 boundary
+layers. Pass the key directly to loader functions or keep it in a local script.
+Do not commit API keys.
+
+The bundled demo expects:
+
+- `src/equitransport/data/NZDep2023.csv`
+- `src/equitransport/data/gtfs/stops.txt`
+- GTFS `stop_times.txt`, `trips.txt`, and `routes.txt` when using weighted
+  access
+
+## End-to-End Workflow
+
+```python
+import pandas as pd
+
+from equitransport import (
+    compute_access,
+    equity_summary,
+    load_auckland_sa1_boundaries,
+    load_auckland_sa2_boundaries,
+    load_nzdep,
+)
+from equitransport.plotting import (
+    plot_access_map,
+    plot_nzdep_map,
+    plot_quintile_access_bar,
+    plot_worst_gaps_map,
+)
+
+api_key = "PASTE_YOUR_STATSNZ_API_KEY_HERE"
+
+sa2_gdf = load_auckland_sa2_boundaries(
+    api_key=api_key,
+    cache_path="outputs/cache/auckland_sa2.gpkg",
+)
+sa1_gdf = load_auckland_sa1_boundaries(
+    sa2_gdf,
+    api_key=api_key,
+    cache_path="outputs/cache/auckland_sa1.gpkg",
+)
+nzdep_df = pd.read_csv("src/equitransport/data/NZDep2023.csv")
+
+sa2 = load_nzdep(sa2_gdf, nzdep_df=nzdep_df)
+sa2 = compute_access(
+    sa2,
+    sa1_gdf=sa1_gdf,
+    nzdep_df=nzdep_df,
+    gtfs_dir="src/equitransport/data/gtfs",
+)
+
+summary, gini_value, sa2_final = equity_summary(sa2)
+
+sa2_final.to_file("outputs/sa2_equity.gpkg", driver="GPKG")
+summary.to_csv("outputs/equity_summary.csv", index=False)
+
+plot_nzdep_map(sa2_final, "outputs/nzdep_map.png")
+plot_access_map(sa2_final, output_path="outputs/access_map.png")
+plot_worst_gaps_map(sa2_final, "outputs/worst_gaps_map.png")
+plot_quintile_access_bar(summary, "outputs/access_by_quintile.png")
+
+print(f"Auckland access Gini: {gini_value:.3f}")
+```
+
+## Running the Demo Script
+
+Edit `scripts/run_demo.py` and set `STATSNZ_API_KEY` to your local Datafinder
+API key, then run:
+
+```bash
+uv run python scripts/run_demo.py
+```
+
+The script saves outputs under `outputs/`:
+
+- `sa2_equity.gpkg`
+- `equity_summary.csv`
+- `weighted_access_summary.csv`
+- `nzdep_map.png`
+- `access_map.png`
+- `weighted_access_map.png`
+- `worst_gaps_map.png`
+- `access_by_quintile.png`
+
+## Normal Access
+
+`compute_access()` always creates the main stop-proximity metric:
+
+- `pct_population_within_400m`: percentage of each SA2 population represented
+  by SA1 centroids that fall within 400 m of any public transport stop.
+
+Use it in summaries and maps:
+
+```python
+summary, gini_value, sa2_final = equity_summary(
+    sa2,
+    access_col="pct_population_within_400m",
+)
+
+plot_access_map(
+    sa2_final,
+    access_col="pct_population_within_400m",
+    output_path="outputs/access_map.png",
+)
+```
+
+## Weighted Access
+
+When `gtfs_dir` is provided, `compute_access()` also creates:
+
+- `weighted_access_score`: a population-weighted nearby-stop score that uses
+  GTFS `route_type` values and simple mode weights.
+
+Default mode weights are:
+
+```python
+{
+    "bus": 2,
+    "train": 5,
+    "ferry": 1,
+}
+```
+
+Use weighted access in the same summary and plotting functions:
+
+```python
+weighted_summary, weighted_gini_value, sa2_final = equity_summary(
+    sa2,
+    access_col="weighted_access_score",
+)
+
+plot_access_map(
+    sa2_final,
+    access_col="weighted_access_score",
+    output_path="outputs/weighted_access_map.png",
+)
+```
+
+Custom weights can be passed to `compute_access()`:
+
+```python
+sa2 = compute_access(
+    sa2,
+    sa1_gdf=sa1_gdf,
+    nzdep_df=nzdep_df,
+    gtfs_dir="src/equitransport/data/gtfs",
+    mode_weights={
+        "bus": 1,
+        "train": 4,
+        "ferry": 2,
+    },
+)
+```
+
+## Using Already-Loaded Data
+
+You can skip file downloads if you already have boundary and stop
+`GeoDataFrame` objects:
+
+```python
+sa2 = load_nzdep(existing_sa2_gdf, nzdep_df=nzdep_df)
+sa2 = compute_access(
+    sa2,
+    sa1_gdf=existing_sa1_gdf,
+    nzdep_df=nzdep_df,
+    stops_gdf=existing_stops_gdf,
+)
+summary, gini_value, sa2_final = equity_summary(sa2)
+```
+
+All distance and buffer operations are performed in EPSG:2193.

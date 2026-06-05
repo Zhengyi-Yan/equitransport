@@ -1,0 +1,172 @@
+---
+title: "Data and Methods"
+---
+
+This page describes the required datasets, expected columns, coordinate
+systems, and modelling assumptions used by `equitransport`.
+
+## Required Datasets
+
+### SA2 Boundaries
+
+Auckland SA2 boundaries are loaded from the Stats NZ Datafinder WFS API. The
+package uses the SA2 higher geographies 2023 layer and filters to:
+
+```text
+REGC2023_V1_00_NAME='Auckland Region'
+```
+
+Required columns after normalisation:
+
+- `SA22023_code`
+- `SA22023_name`
+- `geometry`
+
+### SA1 Boundaries
+
+SA1 boundaries are loaded from the Stats NZ Datafinder WFS API using the
+Auckland SA2 extent as a bounding box. They are used to calculate SA1 centroid
+points for population-weighted access analysis.
+
+Required columns after normalisation:
+
+- `SA12023_code`
+- `geometry`
+
+### NZDep2023
+
+NZDep data is supplied at SA1 level and aggregated to SA2 level.
+
+Required columns:
+
+- `SA12023_code`
+- `SA22023_code`
+- `SA22023_name`
+- `NZDep2023`
+- `NZDep2023_Score`
+- `URPopnSA1_2023`
+
+`load_nzdep()` uses `URPopnSA1_2023` as the population weight when calculating
+SA2 deprivation metrics.
+
+### GTFS
+
+The normal access metric requires GTFS `stops.txt`.
+
+Required `stops.txt` columns:
+
+- `stop_id`
+- `stop_name`
+- `stop_lat`
+- `stop_lon`
+
+Weighted access requires a full GTFS folder with:
+
+- `stops.txt`
+- `stop_times.txt`
+- `trips.txt`
+- `routes.txt`
+
+`load_gtfs_stops_with_modes()` uses `routes.txt` `route_type` values to attach
+mode information to stops.
+
+## Coordinate Reference System
+
+All distance and buffer operations use:
+
+```text
+EPSG:2193
+```
+
+GTFS stop coordinates start in WGS84 longitude and latitude, then are projected
+to EPSG:2193 before buffering. Boundary layers are also normalised to
+EPSG:2193.
+
+## Access Method
+
+`compute_access()` estimates access in four steps:
+
+1. Convert SA1 polygons to centroids and attach SA1 population.
+2. Convert public transport stops to point geometries in EPSG:2193.
+3. Buffer stops by the selected distance, defaulting to `400` metres.
+4. Sum SA1 populations whose centroids fall within any stop buffer, grouped by
+   parent SA2.
+
+The normal access output is:
+
+```text
+pct_population_within_400m =
+    population_within_400m / population * 100
+```
+
+This is a stop-proximity metric, not a full public transport quality metric.
+
+## Weighted Access Method
+
+When full GTFS route data is provided, the package also calculates
+`weighted_access_score`. Each SA1 centroid receives a nearby-stop score based
+on route-serving stops within the buffer distance. Scores are then averaged to
+SA2 level using SA1 population.
+
+Default mode weights:
+
+```python
+{
+    "bus": 2,
+    "train": 5,
+    "ferry": 1,
+}
+```
+
+GTFS `route_type` values are mapped as:
+
+- `0`, `1`, `2`: train
+- `3`: bus
+- `4`: ferry
+
+Other or missing modes receive a fallback weight of `1`.
+
+## Equity Summary Method
+
+`equity_summary()` groups SA2 rows by `nzdep_quintile` and calculates:
+
+- SA2 count
+- total population
+- mean access
+- population-weighted access
+- minimum access
+- maximum access
+
+It also calculates a population-weighted Gini coefficient for the selected
+access column and adds a `worst_gap` flag.
+
+`worst_gap` is true when:
+
+```text
+nzdep_quintile == 5 and access_quintile == 1
+```
+
+This identifies high-deprivation SA2s with low relative public transport stop
+access.
+
+## Limitations
+
+- The access metric uses a 400 m straight-line buffer, not walking-network
+  distance.
+- SA1 centroids approximate population location.
+- Stop proximity does not measure service frequency, reliability, travel time,
+  fares, accessibility, or route usefulness.
+- The weighted access score is a simple mode-weighted nearby-stop score, not a
+  timetable-based service-quality model.
+- The current workflow is designed around Auckland and NZDep2023 inputs.
+
+## Interpreting Results
+
+Use `pct_population_within_400m` when the question is whether people live near
+any public transport stop. Use `weighted_access_score` when the question needs
+a rough distinction between stop types or route modes.
+
+The Gini coefficient summarises inequality in access across SA2s. A lower
+value indicates more equal access values; a higher value indicates greater
+inequality. The quintile summary table is usually easier to interpret for
+policy analysis because it directly compares deprivation groups.

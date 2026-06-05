@@ -1,0 +1,397 @@
+---
+title: "API Reference"
+---
+
+This page documents the public functions exported by `equitransport` and the
+plotting helpers available from `equitransport.plotting`.
+
+## Package Exports
+
+```python
+from equitransport import (
+    compute_access,
+    decile_to_quintile,
+    equity_summary,
+    gini,
+    load_auckland_sa1_boundaries,
+    load_auckland_sa2_boundaries,
+    load_gtfs_stops,
+    load_gtfs_stops_with_modes,
+    load_nzdep,
+    load_statsnz_wfs_layer,
+    prepare_sa1_centroids,
+)
+```
+
+## Data Loading
+
+### `load_statsnz_wfs_layer()`
+
+```python
+load_statsnz_wfs_layer(
+    layer_id,
+    api_key=None,
+    base_url=None,
+    cql_filter=None,
+    bbox=None,
+    cache_path=None,
+)
+```
+
+Loads a Stats NZ Datafinder WFS layer as a `geopandas.GeoDataFrame`.
+
+Parameters:
+
+- `layer_id`: Stats NZ Datafinder layer id.
+- `api_key`: Datafinder API key. If omitted, the function attempts to read
+  local package config.
+- `base_url`: optional WFS base URL template.
+- `cql_filter`: optional server-side CQL filter.
+- `bbox`: optional `(minx, miny, maxx, maxy)` bounding box in EPSG:2193.
+- `cache_path`: optional GeoPackage path. Existing cache files are read before
+  making a network request; new downloads are saved to this path.
+
+Returns:
+
+- A boundary `GeoDataFrame` normalised to EPSG:2193.
+
+### `load_auckland_sa2_boundaries()`
+
+```python
+load_auckland_sa2_boundaries(api_key=None, cache_path=None)
+```
+
+Loads Auckland SA2 higher-geography boundaries from Stats NZ Datafinder.
+
+Required output columns:
+
+- `SA22023_code`
+- `SA22023_name`
+- `geometry`
+
+Returns:
+
+- An Auckland SA2 `GeoDataFrame` in EPSG:2193.
+
+### `load_auckland_sa1_boundaries()`
+
+```python
+load_auckland_sa1_boundaries(sa2_gdf, api_key=None, cache_path=None)
+```
+
+Loads SA1 boundaries intersecting the Auckland SA2 extent.
+
+Parameters:
+
+- `sa2_gdf`: Auckland SA2 boundaries used to define the download bounding box.
+- `api_key`: Datafinder API key.
+- `cache_path`: optional GeoPackage cache path.
+
+Required output columns:
+
+- `SA12023_code`
+- `geometry`
+
+Returns:
+
+- An SA1 `GeoDataFrame` in EPSG:2193.
+
+### `load_nzdep()`
+
+```python
+load_nzdep(sa2_gdf, nzdep_path=None, nzdep_df=None)
+```
+
+Aggregates SA1-level NZDep2023 data to SA2 level using
+`URPopnSA1_2023` as the population weight, then joins the result to
+`sa2_gdf`.
+
+Parameters:
+
+- `sa2_gdf`: SA2 boundary `GeoDataFrame` with `SA22023_code`.
+- `nzdep_path`: path to an NZDep CSV.
+- `nzdep_df`: already-loaded NZDep `DataFrame`.
+
+Provide exactly one of `nzdep_path` or `nzdep_df`.
+
+Required NZDep columns:
+
+- `SA12023_code`
+- `SA22023_code`
+- `NZDep2023`
+- `NZDep2023_Score`
+- `URPopnSA1_2023`
+
+Adds these columns:
+
+- `population`
+- `weighted_nzdep`
+- `weighted_nzdep_score`
+- `nzdep_quintile`
+- `sa1_count`
+
+Returns:
+
+- An SA2 `GeoDataFrame` with deprivation and population metrics.
+
+### `load_gtfs_stops()`
+
+```python
+load_gtfs_stops(stops_path)
+```
+
+Loads GTFS `stops.txt`, converts `stop_lon` and `stop_lat` to point geometry,
+and projects the result to EPSG:2193.
+
+Required columns:
+
+- `stop_lat`
+- `stop_lon`
+
+Returns:
+
+- A stop-point `GeoDataFrame` in EPSG:2193.
+
+### `load_gtfs_stops_with_modes()`
+
+```python
+load_gtfs_stops_with_modes(gtfs_dir)
+```
+
+Loads GTFS stops with route mode information attached. The function joins:
+
+- `stops.txt`
+- `stop_times.txt`
+- `trips.txt`
+- `routes.txt`
+
+The output includes `route_type`, using standard GTFS mode values from
+`routes.txt`.
+
+Returns:
+
+- A stop-point `GeoDataFrame` in EPSG:2193, with one stop row per route type
+  serving that stop.
+
+## Access Analysis
+
+### `prepare_sa1_centroids()`
+
+```python
+prepare_sa1_centroids(sa1_gdf, nzdep_df)
+```
+
+Creates SA1 centroid points with population and parent SA2 code attached.
+
+Required `sa1_gdf` columns:
+
+- `SA12023_code`
+- `geometry`
+
+Required `nzdep_df` columns:
+
+- `SA12023_code`
+- `SA22023_code`
+- `URPopnSA1_2023`
+
+Returns:
+
+- A centroid `GeoDataFrame` with `SA12023_code`, `SA22023_code`,
+  `URPopnSA1_2023`, and `geometry`.
+
+### `compute_access()`
+
+```python
+compute_access(
+    gdf,
+    metric_col="pct_population_within_400m",
+    sa1_gdf=None,
+    nzdep_df=None,
+    stops_gdf=None,
+    stops_path=None,
+    gtfs_dir=None,
+    distance=400,
+    mode_weights=None,
+)
+```
+
+Calculates buffer-based public transport access for each SA2.
+
+Required `gdf` columns:
+
+- `SA22023_code`
+- `population`
+- `geometry`
+
+Required supporting data:
+
+- `sa1_gdf`
+- `nzdep_df`
+- one of `stops_gdf`, `stops_path`, or `gtfs_dir`
+
+Parameters:
+
+- `metric_col`: optional alias column for the normal access percentage.
+- `distance`: stop buffer distance in metres. Defaults to `400`.
+- `mode_weights`: optional dictionary used for weighted access. Defaults to
+  `{"bus": 2, "train": 5, "ferry": 1}`.
+
+Adds these columns:
+
+- `population_within_400m`
+- `pct_population_within_400m`
+- `access_quintile`
+- `weighted_access_score`
+
+Returns:
+
+- An SA2 `GeoDataFrame` in EPSG:2193.
+
+## Equity Metrics
+
+### `gini()`
+
+```python
+gini(values, weights=None)
+```
+
+Calculates a Gini coefficient for array-like values. If `weights` are supplied,
+the coefficient is population-weighted.
+
+Returns:
+
+- A float from `0` to `1`, where `0` means equal access values.
+- `nan` when no valid values are available.
+
+### `equity_summary()`
+
+```python
+equity_summary(
+    gdf,
+    access_col="pct_population_within_400m",
+    deprivation_col="nzdep_quintile",
+)
+```
+
+Creates NZDep quintile summaries and choropleth-ready equity flags.
+
+Required columns:
+
+- `deprivation_col`
+- `population`
+- `access_col`
+
+Returns a tuple:
+
+```python
+summary, gini_value, result_gdf = equity_summary(sa2)
+```
+
+`summary` columns:
+
+- `nzdep_quintile`
+- `sa2_count`
+- `population`
+- `mean_access`
+- `population_weighted_access`
+- `min_access`
+- `max_access`
+
+`result_gdf` includes a `worst_gap` boolean flag. `worst_gap` is true for SA2s
+in NZDep quintile 5 and access quintile 1.
+
+### `decile_to_quintile()`
+
+```python
+decile_to_quintile(decile)
+```
+
+Converts an NZDep decile from `1` to `10` into a quintile from `1` to `5`.
+
+Raises:
+
+- `ValueError` when the value is missing, non-numeric, below `1`, or above
+  `10`.
+
+## Plotting Helpers
+
+Import plotting functions from `equitransport.plotting`:
+
+```python
+from equitransport.plotting import (
+    plot_access_map,
+    plot_nzdep_map,
+    plot_quintile_access_bar,
+    plot_worst_gaps_map,
+)
+```
+
+### `plot_nzdep_map()`
+
+```python
+plot_nzdep_map(
+    gdf,
+    output_path=None,
+    exclude_sa2_names=DEFAULT_EXCLUDED_MAP_SA2_NAMES,
+    exclude_unpopulated=True,
+    urban_zoom=True,
+    water_color=DEFAULT_WATER_COLOR,
+)
+```
+
+Plots Auckland SA2s coloured by `nzdep_quintile`.
+
+Returns:
+
+- `(fig, ax)`
+
+### `plot_access_map()`
+
+```python
+plot_access_map(
+    gdf,
+    access_col="pct_population_within_400m",
+    output_path=None,
+    exclude_sa2_names=DEFAULT_EXCLUDED_MAP_SA2_NAMES,
+    exclude_unpopulated=True,
+    urban_zoom=True,
+    water_color=DEFAULT_WATER_COLOR,
+)
+```
+
+Plots Auckland SA2s coloured by the selected access metric.
+
+Returns:
+
+- `(fig, ax)`
+
+### `plot_worst_gaps_map()`
+
+```python
+plot_worst_gaps_map(
+    gdf,
+    output_path=None,
+    exclude_sa2_names=DEFAULT_EXCLUDED_MAP_SA2_NAMES,
+    exclude_unpopulated=True,
+    urban_zoom=True,
+    water_color=DEFAULT_WATER_COLOR,
+)
+```
+
+Plots all mapped SA2s in grey and highlights rows where `worst_gap` is true.
+
+Returns:
+
+- `(fig, ax)`
+
+### `plot_quintile_access_bar()`
+
+```python
+plot_quintile_access_bar(summary, output_path=None)
+```
+
+Plots `population_weighted_access` by NZDep quintile.
+
+Returns:
+
+- `(fig, ax)`

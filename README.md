@@ -12,6 +12,28 @@ summary tables, and static maps.
 
 ## Installation
 
+Install the published TestPyPI package in a fresh environment:
+
+```bash
+python -m pip install --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple/ Equitransport==0.1.0
+```
+
+Then confirm the package imports:
+
+```bash
+python -c "import equitransport; print(equitransport.__version__); print(equitransport.gini([1, 2, 3]))"
+```
+
+Expected output:
+
+```text
+0.1.0
+0.2222222222222222
+```
+
+For local development from this repository:
+
 ```bash
 uv sync
 uv run pytest -v
@@ -22,6 +44,23 @@ For a local editable install:
 ```bash
 uv pip install -e .
 ```
+
+## Documentation
+
+Full Quarto documentation is available in this repository:
+
+- [Usage guide](usage.qmd)
+- [API reference](api-reference.qmd)
+- [Data and methods](data-methods.qmd)
+- [Documentation home](index.qmd)
+
+Render the documentation locally with:
+
+```bash
+quarto render
+```
+
+The rendered site is written to `_site/index.html`.
 
 ## Required Datasets
 
@@ -162,6 +201,14 @@ You can also run the demo script after pasting your API key into
 uv run python scripts/run_demo.py
 ```
 
+Expected terminal output has this form:
+
+```text
+Auckland access Gini: 0.xxx
+Auckland weighted access Gini: 0.xxx
+Saved outputs to /path/to/equitransport-akl/outputs
+```
+
 ## Main Functions
 
 - `load_auckland_sa2_boundaries()` downloads Auckland SA2 boundaries from the
@@ -207,3 +254,7 @@ The workflow can produce:
 - Service frequency weighting.
 - Interactive web dashboard.
 - Support for other cities.
+
+## License
+
+This project is released under the MIT License. See [LICENSE](LICENSE).
