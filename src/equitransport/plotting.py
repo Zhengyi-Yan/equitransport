@@ -84,21 +84,13 @@ def plot_nzdep_map(
     Parameters
     ----------
     gdf:
-        SA2 GeoDataFrame containing ``nzdep_quintile`` and geometry.
+        SA2 GeoDataFrame.
     output_path:
-        Optional image path. When supplied, the figure is saved to disk.
-    exclude_sa2_names:
-        Optional SA2 names to exclude from the map.
-    exclude_unpopulated:
-        Whether to exclude rows with missing or zero population.
-    urban_zoom:
-        Whether to zoom to the central urban extent using centroid quantiles.
-    water_color:
-        Axes background colour used for water.
+        Optional path to save the figure.
 
     Returns
     -------
-    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+    tuple[Figure, Axes]
         Matplotlib figure and axes.
     """
 
@@ -126,23 +118,15 @@ def plot_access_map(
     Parameters
     ----------
     gdf:
-        SA2 GeoDataFrame containing the selected access column and geometry.
+        SA2 GeoDataFrame.
     access_col:
         Column used to colour the map.
     output_path:
-        Optional image path. When supplied, the figure is saved to disk.
-    exclude_sa2_names:
-        Optional SA2 names to exclude from the map.
-    exclude_unpopulated:
-        Whether to exclude rows with missing or zero population.
-    urban_zoom:
-        Whether to zoom to the central urban extent using centroid quantiles.
-    water_color:
-        Axes background colour used for water.
+        Optional path to save the figure.
 
     Returns
     -------
-    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+    tuple[Figure, Axes]
         Matplotlib figure and axes.
     """
 
@@ -169,21 +153,13 @@ def plot_worst_gaps_map(
     Parameters
     ----------
     gdf:
-        SA2 GeoDataFrame containing a boolean ``worst_gap`` column.
+        SA2 GeoDataFrame with a ``worst_gap`` column.
     output_path:
-        Optional image path. When supplied, the figure is saved to disk.
-    exclude_sa2_names:
-        Optional SA2 names to exclude from the map.
-    exclude_unpopulated:
-        Whether to exclude rows with missing or zero population.
-    urban_zoom:
-        Whether to zoom to the central urban extent using centroid quantiles.
-    water_color:
-        Axes background colour used for water.
+        Optional path to save the figure.
 
     Returns
     -------
-    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+    tuple[Figure, Axes]
         Matplotlib figure and axes.
     """
 
@@ -206,14 +182,13 @@ def plot_quintile_access_bar(summary: pd.DataFrame, output_path: str | Path | No
     Parameters
     ----------
     summary:
-        Summary table from ``equity_summary`` containing ``nzdep_quintile`` and
-        ``population_weighted_access``.
+        Summary table from ``equity_summary``.
     output_path:
-        Optional image path. When supplied, the figure is saved to disk.
+        Optional path to save the figure.
 
     Returns
     -------
-    tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+    tuple[Figure, Axes]
         Matplotlib figure and axes.
     """
 

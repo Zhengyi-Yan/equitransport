@@ -89,29 +89,27 @@ def load_statsnz_wfs_layer(
 ) -> gpd.GeoDataFrame:
     """Load a Stats NZ Datafinder WFS layer.
 
-    If ``cache_path`` exists, it is read instead of calling the API. If it does
-    not exist, the API result is saved there after download.
+    A local GeoPackage cache can be used to avoid repeated downloads.
 
     Parameters
     ----------
     layer_id:
-        Numeric Stats NZ Datafinder layer identifier.
+        Stats NZ Datafinder layer ID.
     api_key:
-        Stats NZ Datafinder API key. If omitted, the function attempts to read
-        ``STATSNZ_API_KEY`` from local package config.
+        Datafinder API key.
     base_url:
-        Optional WFS base URL template containing ``{api_key}``.
+        Optional WFS base URL template.
     cql_filter:
-        Optional CQL filter passed to the WFS request.
+        Optional CQL filter.
     bbox:
-        Optional bounding box as ``(minx, miny, maxx, maxy)`` in EPSG:2193.
+        Optional bounding box in EPSG:2193.
     cache_path:
-        Optional GeoPackage cache path.
+        Optional path for a cached GeoPackage.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        WFS features with normalised boundary column names in EPSG:2193.
+        Layer features in EPSG:2193.
     """
 
     if cache_path is not None:
@@ -141,15 +139,14 @@ def load_auckland_sa2_boundaries(
     Parameters
     ----------
     api_key:
-        Stats NZ Datafinder API key.
+        Datafinder API key.
     cache_path:
-        Optional GeoPackage cache path used to avoid repeated API calls.
+        Optional cache path.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        Auckland SA2 boundaries with ``SA22023_code``, ``SA22023_name``, and
-        ``geometry`` columns in EPSG:2193.
+        Auckland SA2 boundaries in EPSG:2193.
     """
 
     layer_id = _get_config_value(
@@ -176,17 +173,16 @@ def load_auckland_sa1_boundaries(
     Parameters
     ----------
     sa2_gdf:
-        Auckland SA2 boundary layer used to define the request bounding box.
+        Auckland SA2 boundaries used to define the request area.
     api_key:
-        Stats NZ Datafinder API key.
+        Datafinder API key.
     cache_path:
-        Optional GeoPackage cache path used to avoid repeated API calls.
+        Optional cache path.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        SA1 boundaries with ``SA12023_code`` and ``geometry`` columns in
-        EPSG:2193.
+        SA1 boundaries in EPSG:2193.
     """
 
     layer_id = _get_config_value("SA1_2023_LAYER_ID", SA1_2023_LAYER_ID)
@@ -206,33 +202,24 @@ def load_nzdep(
     nzdep_path: str | Path | None = None,
     nzdep_df: pd.DataFrame | None = None,
 ) -> gpd.GeoDataFrame:
-    """Join NZDep deprivation and population data to Auckland SA2 polygons.
+    """Join NZDep deprivation and population data to SA2 polygons.
 
-    NZDep rows are supplied at SA1 level and aggregated to SA2 using
-    ``URPopnSA1_2023`` as the population weight.
+    NZDep is supplied at SA1 level, so this function aggregates it to SA2 using
+    SA1 population as the weight.
 
     Parameters
     ----------
     sa2_gdf:
-        SA2 boundary layer containing ``SA22023_code`` and geometry.
+        SA2 boundary layer.
     nzdep_path:
-        Path to an NZDep2023 CSV file. Provide this or ``nzdep_df``, not both.
+        Path to an NZDep2023 CSV file.
     nzdep_df:
-        Already-loaded NZDep2023 table. Provide this or ``nzdep_path``, not
-        both.
+        Already-loaded NZDep2023 table.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        SA2 polygons enriched with ``population``, ``weighted_nzdep``,
-        ``weighted_nzdep_score``, ``nzdep_quintile``, and ``sa1_count``.
-
-    Raises
-    ------
-    ValueError
-        If neither or both NZDep data sources are provided.
-    KeyError
-        If required columns are missing.
+        SA2 polygons with population and NZDep summary columns.
     """
 
     _require_columns(sa2_gdf, {"SA22023_code"}, "sa2_gdf")
@@ -314,23 +301,17 @@ def load_nzdep(
 
 
 def load_gtfs_stops(stops_path: str | Path) -> gpd.GeoDataFrame:
-    """Load GTFS stop locations.
+    """Load GTFS stops as projected point geometries.
 
     Parameters
     ----------
     stops_path:
-        Path to a GTFS ``stops.txt`` file containing ``stop_lat`` and
-        ``stop_lon``.
+        Path to GTFS ``stops.txt``.
 
     Returns
     -------
     geopandas.GeoDataFrame
         Stop points projected to EPSG:2193.
-
-    Raises
-    ------
-    KeyError
-        If required latitude or longitude columns are missing.
     """
 
     stops = pd.read_csv(stops_path)
@@ -352,26 +333,18 @@ def load_gtfs_stops(stops_path: str | Path) -> gpd.GeoDataFrame:
 def load_gtfs_stops_with_modes(gtfs_dir: str | Path) -> gpd.GeoDataFrame:
     """Load GTFS stops with route mode information attached.
 
-    Standard GTFS stores mode in ``routes.txt`` as ``route_type``, not in
-    ``stops.txt``. This helper joins ``stop_times.txt`` to ``trips.txt`` and
-    ``routes.txt`` so each stop is represented once per route type that serves
-    it.
+    GTFS stores mode in ``routes.txt`` as ``route_type``, so this joins the
+    relevant GTFS tables before returning stop points.
 
     Parameters
     ----------
     gtfs_dir:
-        Directory containing GTFS ``stops.txt``, ``stop_times.txt``,
-        ``trips.txt``, and ``routes.txt``.
+        Directory containing the GTFS text files.
 
     Returns
     -------
     geopandas.GeoDataFrame
         Stop points in EPSG:2193 with a ``route_type`` column.
-
-    Raises
-    ------
-    KeyError
-        If required GTFS columns are missing.
     """
 
     gtfs = Path(gtfs_dir)

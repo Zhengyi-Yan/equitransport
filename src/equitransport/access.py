@@ -18,20 +18,14 @@ def prepare_sa1_centroids(sa1_gdf: gpd.GeoDataFrame, nzdep_df: pd.DataFrame) -> 
     Parameters
     ----------
     sa1_gdf:
-        SA1 boundary layer containing ``SA12023_code`` and geometry.
+        SA1 boundary layer.
     nzdep_df:
-        NZDep2023 table containing ``SA12023_code``, ``SA22023_code``, and
-        ``URPopnSA1_2023``.
+        NZDep2023 table with SA1 population and SA2 codes.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        SA1 centroid points in EPSG:2193 with population and parent SA2 code.
-
-    Raises
-    ------
-    KeyError
-        If required SA1 or NZDep columns are missing.
+        Population-bearing SA1 centroid points in EPSG:2193.
     """
 
     _require_columns(sa1_gdf, {"SA12023_code", "geometry"}, "sa1_gdf")
@@ -181,45 +175,34 @@ def compute_access(
 ) -> gpd.GeoDataFrame:
     """Calculate buffer-based public transport access for each SA2.
 
+    The normal metric is the percentage of each SA2 population represented by
+    SA1 centroids within the stop buffer distance.
+
     Parameters
     ----------
     gdf:
-        SA2 GeoDataFrame containing ``SA22023_code``, ``population``, and
-        geometry. This is usually the output of ``load_nzdep``.
+        SA2 GeoDataFrame, usually from ``load_nzdep``.
     metric_col:
-        Optional additional column name for the normal access percentage.
+        Optional alias column for the normal access percentage.
     sa1_gdf:
-        SA1 boundary layer used to create population centroids.
+        SA1 boundary layer.
     nzdep_df:
-        NZDep2023 table used to attach SA1 population and parent SA2 codes.
+        NZDep2023 table.
     stops_gdf:
-        Already-loaded stop point GeoDataFrame. If geometry is absent,
-        ``stop_lon`` and ``stop_lat`` are used.
+        Already-loaded stop points or stop lon/lat table.
     stops_path:
-        Path to GTFS ``stops.txt``. Ignored when ``stops_gdf`` or
-        ``gtfs_dir`` is supplied.
+        Path to GTFS ``stops.txt``.
     gtfs_dir:
-        Directory containing full GTFS files. Enables weighted access by route
-        mode.
+        Full GTFS directory, used when weighted access is needed.
     distance:
         Stop buffer distance in metres.
     mode_weights:
-        Optional mode weights for ``weighted_access_score``. Defaults to
-        ``{"bus": 2, "train": 5, "ferry": 1}``.
+        Optional weights for bus, train, and ferry stops.
 
     Returns
     -------
     geopandas.GeoDataFrame
-        SA2 GeoDataFrame in EPSG:2193 with ``population_within_400m``,
-        ``pct_population_within_400m``, ``access_quintile``, and
-        ``weighted_access_score`` columns.
-
-    Raises
-    ------
-    ValueError
-        If SA1/NZDep inputs or stop inputs are missing.
-    KeyError
-        If required SA2 columns are missing.
+        SA2 GeoDataFrame with access columns added.
     """
 
     _require_columns(gdf, {"SA22023_code", "population", "geometry"}, "gdf")
