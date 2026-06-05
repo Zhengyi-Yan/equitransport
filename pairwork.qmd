@@ -1,0 +1,24 @@
+Equitransport was completed collaboratively by Zhengyi Yan and Ruoxuan Huang. We divided the work by package component, then integrated the modules into one reproducible workflow. Zhengyi led the initial project setup, data preparation, package structure, parts of the design report, documentations, and testing work. Ruoxuan contributed to other parts of the design report, the early test files and created several supporting modules. The GitHub commit history shows contributions from both members, including Zhengyi’s commits for setup, data, access workflow, testing, CI/CD, documentation and packaging, and Ruoxuan’s commits for testing, equity, plotting, utilities and pairwork documentation.
+
+## Roles and Contributions
+
+### Zhengyi Yan
+
+Zhengyi set up the repository and Python package structure, added the initial data files, prepared parts of the design report and workflow diagram, and implemented the main GIS/public transport access workflow. This included developing and integrating the data-loading functions, the GTFS access calculation, weighted access support, GitHub Actions testing, README updates, demo script updates, Quarto documentation, changelog, license, and the final expanded test suite.
+
+### Ruoxuan Huang
+
+Ruoxuan contributed to other parts of the design report and several key supporting modules, including equity.py for equity analysis, plotting.py for visualisation functions, and utils.py for reusable helper functions. Ruoxuan also developed the initial pytest test file, helping establish the project's testing framework. In addition, she contributed to project documentation and communication materials, including written contents and structure in the readme file, and poster design and text preparation.
+
+
+## Integration Approach
+
+Our integration approach was to keep the package modular. Data loading, access calculation, equity metrics, plotting, and utility functions were separated into different modules under `src/equitransport`. This made it easier to combine individual contributions into a single workflow. After the core modules were created, we connected them through the public API in `__init__.py`, added an end-to-end demo script, and expanded the test suite to check normal cases, edge cases, error handling, CRS handling, and plotting outputs.
+
+## What Worked Well
+
+The modular structure worked well because each part of the project had a clear responsibility. Separating different modules made the package easier to test and document. The fact that we had planned our roles before starting on the project made it really clear to us who was going to work on what functionalities and sped up our progress.
+
+## What Went Wrong or Was Difficult
+
+The main difficulties were data handling, GitHub coordination, and packaging/versioning. The project required several different data sources, including NZDep, SA1/SA2 boundaries, and GTFS files, so making the workflow reproducible took more work than expected. We also had to manage GitHub updates and integration carefully, including pulling from main and resolving changes across commits. Near the end, we had to improve versioning, documentation, and test coverage as we realised what we had was not sufficient, especially the number of tests we had at the time. Writing tests was also challenging for us because we had a lot of different modules and that led to a large number of different unit tests and integration tests, which took a while to implement.
