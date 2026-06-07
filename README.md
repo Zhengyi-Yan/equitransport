@@ -15,8 +15,7 @@ summary tables, and static maps.
 Install the published TestPyPI package in a fresh environment:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple/ Equitransport==0.1.5
+python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ Equitransport==0.1.5
 ```
 
 Then confirm the package imports:
