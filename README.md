@@ -125,6 +125,11 @@ plot_access_map(sa2_final, output_path="outputs/access_map.png")
 plot_worst_gaps_map(sa2_final, "outputs/worst_gaps_map.png")
 ```
 
+Alternatively clone the repository and in the root folder run 
+```bash
+uv run python scripts/run_demo.py
+```
+
 ## Normal vs Weighted Access
 
 `compute_access()` creates the normal access metric:
