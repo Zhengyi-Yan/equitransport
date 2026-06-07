@@ -15,7 +15,7 @@ summary tables, and static maps.
 Install the published TestPyPI package in a fresh environment:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ Equitransport==0.1.6
+python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ Equitransport==0.1.8
 ```
 
 Then confirm the package imports:
@@ -27,7 +27,7 @@ python -c "import equitransport; print(equitransport.__version__); print(equitra
 Expected output:
 
 ```text
-0.1.6
+0.1.8
 0.2222222222222222
 ```
 
