@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.1.5"
+__version__ = "0.1.7"
 
 from .access import compute_access, prepare_sa1_centroids
 from .data import (
