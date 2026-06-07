@@ -86,6 +86,8 @@ All distance and buffer operations use EPSG:2193.
 ## Example Usage
 
 ```python
+from pathlib import Path
+from importlib.resources import files, as_file
 import pandas as pd
 
 from equitransport import (
@@ -95,34 +97,58 @@ from equitransport import (
     load_auckland_sa2_boundaries,
     load_nzdep,
 )
-from equitransport.plotting import plot_access_map, plot_nzdep_map, plot_worst_gaps_map
+from equitransport.plotting import (
+    plot_access_map,
+    plot_nzdep_map,
+    plot_worst_gaps_map,
+)
 
-api_key = "PASTE_YOUR_STATSNZ_API_KEY_HERE"
+# Enter your Stats NZ Datafinder API key here.
+api_key = "your_api_key_here"
+
+OUTPUT_DIR = Path("outputs")
+CACHE_DIR = OUTPUT_DIR / "cache"
+OUTPUT_DIR.mkdir(exist_ok=True)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 sa2_gdf = load_auckland_sa2_boundaries(
     api_key=api_key,
-    cache_path="outputs/cache/auckland_sa2.gpkg",
+    cache_path=CACHE_DIR / "auckland_sa2.gpkg",
 )
+
 sa1_gdf = load_auckland_sa1_boundaries(
     sa2_gdf,
     api_key=api_key,
-    cache_path="outputs/cache/auckland_sa1.gpkg",
+    cache_path=CACHE_DIR / "auckland_sa1.gpkg",
 )
-nzdep_df = pd.read_csv("src/equitransport/data/NZDep2023.csv")
 
-sa2 = load_nzdep(sa2_gdf, nzdep_df=nzdep_df)
-sa2 = compute_access(
-    sa2,
-    sa1_gdf=sa1_gdf,
-    nzdep_df=nzdep_df,
-    gtfs_dir="src/equitransport/data/gtfs",
-)
+nzdep_resource = files("equitransport") / "data" / "NZDep2023.csv"
+gtfs_resource = files("equitransport") / "data" / "gtfs"
+
+with as_file(nzdep_resource) as nzdep_path, as_file(gtfs_resource) as gtfs_dir:
+    nzdep_df = pd.read_csv(nzdep_path)
+
+    sa2 = load_nzdep(sa2_gdf, nzdep_df=nzdep_df)
+
+    sa2 = compute_access(
+        sa2,
+        sa1_gdf=sa1_gdf,
+        nzdep_df=nzdep_df,
+        gtfs_dir=gtfs_dir,
+    )
 
 summary, gini_value, sa2_final = equity_summary(sa2)
 
-plot_nzdep_map(sa2_final, "outputs/nzdep_map.png")
-plot_access_map(sa2_final, output_path="outputs/access_map.png")
-plot_worst_gaps_map(sa2_final, "outputs/worst_gaps_map.png")
+plot_nzdep_map(sa2_final, OUTPUT_DIR / "nzdep_map.png")
+plot_access_map(sa2_final, output_path=OUTPUT_DIR / "access_map.png")
+plot_worst_gaps_map(sa2_final, OUTPUT_DIR / "worst_gaps_map.png")
+
+summary.to_csv(OUTPUT_DIR / "equity_summary.csv", index=False)
+sa2_final.to_file(OUTPUT_DIR / "sa2_equity_outputs.gpkg", driver="GPKG")
+
+print(summary)
+print(f"Gini coefficient: {gini_value}")
+print("Outputs saved to:", OUTPUT_DIR)
 ```
 
 Alternatively clone the repository and in the root folder run 
