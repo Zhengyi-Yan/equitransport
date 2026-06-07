@@ -15,7 +15,7 @@ summary tables, and static maps.
 Install the published TestPyPI package in a fresh environment:
 
 ```bash
-python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ Equitransport==0.1.5
+python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ Equitransport==0.1.6
 ```
 
 Then confirm the package imports:
@@ -27,7 +27,7 @@ python -c "import equitransport; print(equitransport.__version__); print(equitra
 Expected output:
 
 ```text
-0.1.5
+0.1.6
 0.2222222222222222
 ```
 
@@ -211,17 +211,22 @@ plot_access_map(
 Custom mode weights can be passed to `compute_access()`:
 
 ```python
-sa2 = compute_access(
-    sa2,
-    sa1_gdf=sa1_gdf,
-    nzdep_df=nzdep_df,
-    gtfs_dir="src/equitransport/data/gtfs",
-    mode_weights={
-        "bus": 1,
-        "train": 4,
-        "ferry": 2,
-    },
-)
+from importlib.resources import files, as_file
+
+gtfs_resource = files("equitransport") / "data" / "gtfs"
+
+with as_file(gtfs_resource) as gtfs_dir:
+    sa2 = compute_access(
+        sa2,
+        sa1_gdf=sa1_gdf,
+        nzdep_df=nzdep_df,
+        gtfs_dir=gtfs_dir,
+        mode_weights={
+            "bus": 1,
+            "train": 4,
+            "ferry": 2,
+        },
+    )
 ```
 
 You can also run the demo script after pasting your API key into

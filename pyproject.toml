@@ -1,6 +1,6 @@
 [project]
 name = "Equitransport"
-version = "0.1.5"
+version = "0.1.6"
 description = "GIS tools for measuring public transport access equity in Auckland."
 readme = "README.md"
 authors = [
